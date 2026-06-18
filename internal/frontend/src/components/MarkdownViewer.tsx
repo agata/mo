@@ -553,11 +553,12 @@ export function MarkdownViewer({
   const [loading, setLoading] = useState(true);
   const [isRawView, setIsRawView] = useState(false);
   const [searchHitMarkers, setSearchHitMarkers] = useState<SearchHitMarker[]>([]);
-  // The sticky file label stays hidden until the document's own title scrolls
-  // off the top, so it never duplicates the heading the reader can already see.
-  const [showStickyLabel, setShowStickyLabel] = useState(false);
+  // The sticky bar shows the file name only while the document's own title is on
+  // screen (so it never duplicates it), then folds the title into the label once
+  // that heading scrolls up behind the bar.
+  const [showFullLabel, setShowFullLabel] = useState(false);
   const articleRef = useRef<HTMLElement>(null);
-  const titleSentinelRef = useRef<HTMLDivElement>(null);
+  const stickyLabelRef = useRef<HTMLDivElement>(null);
   const [prevFetchKey, setPrevFetchKey] = useState({ fileId, revision });
 
   if (fileId !== prevFetchKey.fileId || revision !== prevFetchKey.revision) {
@@ -807,25 +808,26 @@ export function MarkdownViewer({
 
   useEffect(() => {
     const article = articleRef.current;
-    if (loading || !scrollContainer || !article) {
-      setShowStickyLabel(false);
+    const label = stickyLabelRef.current;
+    if (loading || !scrollContainer || !article || !label) {
+      setShowFullLabel(false);
       return;
     }
-    // Reveal the label only after the document's own title (its first heading)
-    // scrolls above the top edge, so it never duplicates a heading still on
-    // screen. Title-less files fall back to a sentinel at the very top.
-    // A direct geometry read avoids the IntersectionObserver first-callback race
-    // that can latch a stale rect when content mounts.
+    // Fold the title into the label once the document's first heading scrolls up
+    // behind the sticky bar. A direct geometry read avoids the
+    // IntersectionObserver first-callback race that can latch a stale rect when
+    // content mounts.
     let frame = 0;
     const update = () => {
       frame = 0;
-      const target = article.querySelector("h1, h2, h3, h4, h5, h6") ?? titleSentinelRef.current;
-      if (!target) {
-        setShowStickyLabel(false);
+      const heading = article.querySelector("h1, h2, h3, h4, h5, h6");
+      if (!heading) {
+        // Nothing to fold in: the label is already just the file name.
+        setShowFullLabel(false);
         return;
       }
-      setShowStickyLabel(
-        target.getBoundingClientRect().bottom <= scrollContainer.getBoundingClientRect().top,
+      setShowFullLabel(
+        heading.getBoundingClientRect().bottom <= label.getBoundingClientRect().bottom,
       );
     };
     const schedule = () => {
@@ -852,24 +854,21 @@ export function MarkdownViewer({
   return (
     <div className="flex items-start gap-2">
       <div className="min-w-0 flex-1">
-        {/* Zero-height sticky wrapper: the label overlays the content top without
-            reserving layout space, so it never pushes the heading down. The
-            negative top cancels the scroll container's p-8 top padding so the
-            bar pins flush under the global header instead of leaving a gap that
-            scrolling content would show through. */}
-        <div className="sticky -top-8 z-20 h-0">
-          <div
-            className={`absolute left-0 top-0 w-full border-b border-gh-border bg-gh-bg py-2 text-sm font-medium text-gh-text-secondary overflow-hidden text-ellipsis whitespace-nowrap transition-opacity duration-150${isWide ? "" : " max-w-[980px]"}${showStickyLabel ? "" : " pointer-events-none opacity-0"}`}
-            title={uploaded ? fileName : filePath}
-          >
-            {formatFileLabel(fileName, title)}
-          </div>
+        {/* Always-visible sticky label. The negative top cancels the scroll
+            container's p-8 top padding so the bar pins flush under the global
+            header instead of leaving a gap that scrolling content would show
+            through. */}
+        <div
+          ref={stickyLabelRef}
+          className={`sticky -top-8 z-20 mb-4 border-b border-gh-border bg-gh-bg py-2 text-sm font-medium text-right text-gh-text-secondary overflow-hidden text-ellipsis whitespace-nowrap${isWide ? "" : " max-w-[980px]"}`}
+          title={uploaded ? fileName : filePath}
+        >
+          {showFullLabel ? formatFileLabel(fileName, title) : fileName}
         </div>
         <article
           ref={articleRef}
           className={`markdown-body relative overflow-visible${isWide ? " markdown-body--wide" : ""}${fontSize !== "medium" ? ` markdown-body--${fontSize}` : ""}`}
         >
-          <div ref={titleSentinelRef} aria-hidden="true" className="h-0" />
           <div className="pointer-events-none absolute inset-0 z-10 overflow-visible">
             {searchHitMarkers.map((marker, index) => (
               <div
