@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MarkdownViewer } from "./MarkdownViewer";
 
 vi.mock("mermaid", () => ({
@@ -88,7 +88,8 @@ describe("MarkdownViewer file label", () => {
     renderViewer({ title: "Project Readme", filePath: "/home/me/code/mo/docs/README.md" });
 
     const label = await screen.findByTitle("/home/me/code/mo/docs/README.md");
-    expect(label.textContent).toBe("Project Readme - README.md");
+    // The folded text is applied by the post-render geometry effect.
+    await waitFor(() => expect(label.textContent).toBe("Project Readme - README.md"));
   });
 
   it("keeps just the file name when the file has no title", async () => {
@@ -104,7 +105,7 @@ describe("MarkdownViewer file label", () => {
     renderViewer({ title: "Pasted", uploaded: true });
 
     const label = await screen.findByTitle("README.md");
-    expect(label.textContent).toBe("Pasted - README.md");
+    await waitFor(() => expect(label.textContent).toBe("Pasted - README.md"));
   });
 
   it("right-aligns the label text", async () => {

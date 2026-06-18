@@ -9,4 +9,9 @@ describe("formatFileLabel", () => {
   it("returns 'title - name' when title is defined", () => {
     expect(formatFileLabel("file.md", "File Title")).toBe("File Title - file.md");
   });
+
+  it("returns the file name alone for an empty or whitespace-only title", () => {
+    expect(formatFileLabel("file.md", "")).toBe("file.md");
+    expect(formatFileLabel("file.md", "   ")).toBe("file.md");
+  });
 });
