@@ -677,7 +677,8 @@ export function MarkdownViewer({
                 href={buildRelativeOpenUrl(activeGroup, fileId, resolved.hrefPath)}
                 onClick={(e) => {
                   // Modifier / middle clicks fall through so the browser opens the
-                  // resolved href in a new tab; only a plain click navigates in place.
+                  // self-resolving href in a new tab (App resolves it on load); only a
+                  // plain click navigates in place.
                   if (!isPlainLeftClick(e)) return;
                   handleLinkClick(e, resolved.hrefPath);
                 }}

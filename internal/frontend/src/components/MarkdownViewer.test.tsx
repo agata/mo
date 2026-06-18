@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { MarkdownViewer } from "./MarkdownViewer";
-import { openRelativeFile } from "../hooks/useApi";
+import { fetchFileContent, openRelativeFile } from "../hooks/useApi";
 
 vi.mock("mermaid", () => ({
   default: {
@@ -14,8 +14,6 @@ vi.mock("../hooks/useApi", () => ({
   fetchFileContent: vi.fn().mockResolvedValue({ content: "# Hello", baseDir: "/repo" }),
   openRelativeFile: vi.fn(),
 }));
-
-import { fetchFileContent } from "../hooks/useApi";
 
 // jsdom has no layout, so stub getBoundingClientRect: the scroll container and
 // the sticky bar sit at the top, and the heading goes wherever a test wants it.
