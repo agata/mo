@@ -1606,12 +1606,12 @@ func handleGroups(state *State) http.HandlerFunc {
 		}
 		result := make([]statusGroup, len(groups))
 		for i, g := range groups {
-			// Normalize an empty Files slice (e.g. pattern-only group whose
-			// pattern currently matches zero files, where AddPattern left Files
-			// nil) so the JSON always encodes as `"files": []` instead of
-			// `"files": null`. The frontend assumes the field is always an
-			// array.
-			if len(g.Files) == 0 {
+			// Pattern-only groups created via AddPattern leave Files as nil,
+			// which encoding/json renders as `"files": null`. The frontend
+			// assumes the field is always an array, so swap a nil slice for
+			// an empty literal. An already-empty non-nil slice is left alone
+			// (encoding/json renders it as `[]` already).
+			if g.Files == nil {
 				g.Files = []*FileEntry{}
 			}
 			result[i] = statusGroup{

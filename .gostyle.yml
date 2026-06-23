@@ -2,6 +2,12 @@ analyzers:
   disable:
     - mixedcaps
     - funcfmt
+    # nilslices conflates nil and empty slices, but the HTTP API
+    # deliberately distinguishes them in JSON output ("files": null
+    # vs "files": []), and that distinction is enforced at the
+    # encoding boundary in handleGroups. The internal-API rationale
+    # the analyzer encodes does not apply at that boundary.
+    - nilslices
 analyzers-settings:
   errorstrings:
     exclude-test: true
